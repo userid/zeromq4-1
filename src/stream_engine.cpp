@@ -836,8 +836,41 @@ int zmq::stream_engine_t::pull_msg_from_session (msg_t *msg_)
     return session->pull_msg (msg_);
 }
 
+void zmq::stream_engine_t::add_meta_addr(msg_t *msg_) {
+    //Hack for ZMTP 2.0
+    int rc = 0;
+    int mlen = msg_->size();
+    if (!metadata && ! peer_address.empty() ){
+        if (mlen<=0){
+            return;
+        }
+        int addr_len = peer_address.size();
+        if (addr_len<1 && addr_len>15){
+            return;
+        }
+        const char* addr = peer_address.data();
+        uint8_t *message = static_cast <uint8_t *> (msg_->data ());
+        if ( message[0] == '\0') {
+            return;
+        }
+        rc = msg_->close ();
+        zmq_assert (rc == 0);
+
+        //在消息的头部插入16字节的数据，用于hack IP信息
+        int alen = 16;
+        rc = msg_->init_size (mlen+alen);
+        zmq_assert (rc == 0);
+
+        memset(msg_->data (), '\0', alen);
+        memcpy((char*)msg_->data ()+1, addr,addr_len);
+        memcpy((char*)msg_->data ()+alen, message, mlen);
+
+    }
+
+}
 int zmq::stream_engine_t::push_msg_to_session (msg_t *msg_)
 {
+    add_meta_addr(msg_);
     return session->push_msg (msg_);
 }
 

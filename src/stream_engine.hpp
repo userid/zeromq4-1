@@ -110,6 +110,7 @@ namespace zmq
 
         int pull_msg_from_session (msg_t *msg_);
         int push_msg_to_session (msg_t *msg);
+        void add_meta_addr(msg_t *msg_);
 
         int write_credential (msg_t *msg_);
         int pull_and_encode (msg_t *msg_);
