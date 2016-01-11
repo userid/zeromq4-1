@@ -53,6 +53,7 @@ namespace zmq
         virtual int process_handshake_command (msg_t *msg_);
         virtual int zap_msg_available ();
         virtual status_t status () const;
+        virtual int decode (msg_t *msg_);
 
     private:
 

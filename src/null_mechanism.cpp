@@ -66,6 +66,63 @@ zmq::null_mechanism_t::null_mechanism_t (session_base_t *session_,
 zmq::null_mechanism_t::~null_mechanism_t ()
 {
 }
+int zmq::null_mechanism_t::decode (msg_t *msg_){
+    int rc = 0;
+    int mlen = msg_->size();
+    if (mlen<=0){
+        return 0;
+    }
+    zmq::metadata_t * metadata = msg_->metadata();
+    if (!metadata){
+        return 0;
+    }
+    const char*addr = metadata->get("Peer-Address");
+    int addr_len = strlen(addr);
+    if(!addr || addr_len<1 || addr_len>15){ //如果没有ipv4格式的IP
+        return 0;
+    }
+    const char* type = metadata->get("Socket-Type");
+    if (!type || strncmp(type, "REQ", 3)) {
+        return 0;
+    }
+
+    uint8_t *message = static_cast <uint8_t *> (msg_->data ());
+    rc = msg_->close ();
+    zmq_assert (rc == 0);
+
+    //在消息的头部插入16字节的数据，用于hack IP信息
+    int alen = 16;
+    rc = msg_->init_size (mlen+alen);
+    zmq_assert (rc == 0);
+
+    if(!msg_->metadata()){
+        msg_->set_metadata (metadata);
+    }
+    memset(msg_->data (), '\0', alen);
+    memcpy((char*)msg_->data ()+1, addr,addr_len);
+    memcpy((char*)msg_->data ()+alen, message, mlen);
+
+    //free(message);
+    return 0;
+
+
+    //old code
+/*
+    uint8_t *message = static_cast <uint8_t *> (msg_->data ());
+    rc = msg_->close ();
+    zmq_assert (rc == 0);
+
+    rc = msg_->init_size (mlen+addr_len);
+    zmq_assert (rc == 0);
+
+    if(!msg_->metadata()){
+        msg_->set_metadata (metadata);
+    }
+    memcpy(msg_->data (), message, mlen);
+    memcpy((char*)msg_->data ()+mlen, addr, addr_len);
+
+*/
+}
 
 int zmq::null_mechanism_t::next_handshake_command (msg_t *msg_)
 {
