@@ -848,11 +848,12 @@ void zmq::stream_engine_t::add_meta_addr(msg_t *msg_) {
         if (addr_len<1 && addr_len>15){
             return;
         }
-        const char* addr = peer_address.data();
-        uint8_t *message = static_cast <uint8_t *> (msg_->data ());
-        if ( message[0] == '\0') {
+        if ( ((char*) msg_->data())[0] == '\0') {
             return;
         }
+        const char* addr = peer_address.data();
+        char* message = (char*) malloc(mlen);
+        memcpy(message, msg_->data (), mlen);
         rc = msg_->close ();
         zmq_assert (rc == 0);
 
@@ -864,6 +865,7 @@ void zmq::stream_engine_t::add_meta_addr(msg_t *msg_) {
         memset(msg_->data (), '\0', alen);
         memcpy((char*)msg_->data ()+1, addr,addr_len);
         memcpy((char*)msg_->data ()+alen, message, mlen);
+        free(message);
 
     }
 

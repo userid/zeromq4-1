@@ -85,8 +85,12 @@ int zmq::null_mechanism_t::decode (msg_t *msg_){
     if (!type || strncmp(type, "REQ", 3)) {
         return 0;
     }
+    if ( ((char*) msg_->data()) [0] == '\0') {
+        return 0;
+    }
 
-    uint8_t *message = static_cast <uint8_t *> (msg_->data ());
+    char* message = (char*) malloc(mlen);
+    memcpy(message, msg_->data (), mlen);
     rc = msg_->close ();
     zmq_assert (rc == 0);
 
@@ -102,7 +106,7 @@ int zmq::null_mechanism_t::decode (msg_t *msg_){
     memcpy((char*)msg_->data ()+1, addr,addr_len);
     memcpy((char*)msg_->data ()+alen, message, mlen);
 
-    //free(message);
+    free(message);
     return 0;
 
 
